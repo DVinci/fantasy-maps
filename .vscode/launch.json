@@ -5,12 +5,12 @@
       "name": "Fantasy Maps (Simple Browser)",
       "type": "node-terminal",
       "request": "launch",
-      "command": "python -m http.server 5500",
+      "command": "python .vscode/serve.py",
       "cwd": "${workspaceFolder}",
       "serverReadyAction": {
         "action": "openWithSimpleBrowser",
-        "pattern": "Serving HTTP on .+ port (\\d+)",
-        "uriFormat": "http://localhost:%s"
+        "pattern": "Serving at (http://localhost:\\d+)",
+        "uriFormat": "%s"
       }
     }
   ]
