@@ -2,13 +2,21 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Fantasy Maps (Simple Browser)",
-      "type": "node-terminal",
+      "name": "Fantasy Maps (VS Code Browser)",
+      "type": "node",
       "request": "launch",
-      "command": "python .vscode/serve.py",
-      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/.vscode/serve.js",
+      "env": { "OPEN_IN_VSCODE": "1" },
+      "outputCapture": "std"
+    },
+    {
+      "name": "Fantasy Maps (External Browser)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/.vscode/serve.js",
+      "console": "integratedTerminal",
       "serverReadyAction": {
-        "action": "openWithSimpleBrowser",
+        "action": "openExternally",
         "pattern": "Listening on port (\\d+)",
         "uriFormat": "http://localhost:%s"
       }
