@@ -12,6 +12,6 @@ class Server(socketserver.TCPServer):
     allow_reuse_address = True
 
 with Server(("", PORT), QuietHandler) as httpd:
-    sys.stdout.write(f"Serving at http://localhost:{PORT}\n")
+    sys.stdout.write(f"Listening on port {PORT}\n")
     sys.stdout.flush()
     httpd.serve_forever()

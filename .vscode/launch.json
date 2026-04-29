@@ -9,8 +9,8 @@
       "cwd": "${workspaceFolder}",
       "serverReadyAction": {
         "action": "openWithSimpleBrowser",
-        "pattern": "Serving at (http://localhost:\\d+)",
-        "uriFormat": "%s"
+        "pattern": "Listening on port (\\d+)",
+        "uriFormat": "http://localhost:%s"
       }
     }
   ]
