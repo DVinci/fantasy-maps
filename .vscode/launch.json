@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Fantasy Maps (Simple Browser)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "python -m http.server 5500",
+      "cwd": "${workspaceFolder}",
+      "serverReadyAction": {
+        "action": "openWithSimpleBrowser",
+        "pattern": "Serving HTTP on .+ port (\\d+)",
+        "uriFormat": "http://localhost:%s"
+      }
+    }
+  ]
+}
