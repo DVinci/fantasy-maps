@@ -3,7 +3,7 @@
 <h2>Erosion</h2>
 <p>We simulate hydraulic erosion to carve realistic river valleys and smooth out artificial-looking height discontinuities. The process: fill sinks → compute flux → erode → repeat.</p>
 
-<DemoBox SvgContent="@_svg" IsGenerating="@_busy">
+<DemoBox SvgContent="@_svg" IsGenerating="@_busy" Error="@_error">
     <Controls>
         <button @onclick="GenCoast" disabled="@_busy">Generate coast</button>
         <button @onclick="DoErode" disabled="@_busy">Erode</button>
@@ -13,15 +13,12 @@
 
 @code {
     string _svg = string.Empty;
+    string _error = string.Empty;
     bool _busy;
     HeightField? _h;
 
-    public HeightField? HeightResult => _h;
-
-    async Task EnsureH()
+    async Task BuildH(VoronoiMesh mesh)
     {
-        if (_h != null) return;
-        var mesh = await MapState.EnsureMeshAsync(256);
         var h = HeightPrimitives.Add(
             HeightPrimitives.Slope(mesh, [Rand.Normal() * 4, Rand.Normal() * 4]),
             HeightPrimitives.Cone(mesh, -0.5),
@@ -31,33 +28,35 @@
         _h = Erosion.SetSeaLevel(h, 0.5);
     }
 
-    async Task GenCoast()
+    async Task Run(Func<Task> action)
     {
+        _error = string.Empty;
         _busy = true;
         StateHasChanged();
-        _h = null;
-        await EnsureH();
-        _svg = TerrainRenderer.DrawVoronoi(_h!);
-        _busy = false;
+        try { await action(); }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _busy = false; }
     }
 
-    async Task DoErode()
+    Task GenCoast() => Run(async () =>
     {
-        _busy = true;
-        StateHasChanged();
-        await EnsureH();
+        _h = null;
+        var mesh = await MapState.EnsureMeshAsync(256);
+        await BuildH(mesh);
+        _svg = TerrainRenderer.DrawVoronoi(_h!);
+    });
+
+    Task DoErode() => Run(async () =>
+    {
+        if (_h == null) { var mesh = await MapState.EnsureMeshAsync(256); await BuildH(mesh); }
         _h = await Task.Run(() => Erosion.DoErosion(_h!, 0.1f));
         _svg = TerrainRenderer.DrawVoronoi(_h);
-        _busy = false;
-    }
+    });
 
-    async Task DoCleanCoast()
+    Task DoCleanCoast() => Run(async () =>
     {
-        _busy = true;
-        StateHasChanged();
-        await EnsureH();
+        if (_h == null) { var mesh = await MapState.EnsureMeshAsync(256); await BuildH(mesh); }
         _h = Erosion.CleanCoast(_h!, 1);
         _svg = TerrainRenderer.DrawVoronoi(_h);
-        _busy = false;
-    }
+    });
 }

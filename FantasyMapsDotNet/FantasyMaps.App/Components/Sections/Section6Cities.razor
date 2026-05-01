@@ -3,7 +3,7 @@
 <h2>City placement</h2>
 <p>Cities are placed on land vertices with high water flux (rivers make good city sites) and at least a minimum distance apart. We score every land vertex and greedily pick the best.</p>
 
-<DemoBox SvgContent="@_svg" IsGenerating="@_busy">
+<DemoBox SvgContent="@_svg" IsGenerating="@_busy" Error="@_error">
     <Controls>
         <button @onclick="AddCity" disabled="@_busy">Add city</button>
         <button @onclick="Reset" disabled="@_busy">Reset cities</button>
@@ -12,6 +12,7 @@
 
 @code {
     string _svg = string.Empty;
+    string _error = string.Empty;
     bool _busy;
     HeightField? _h;
     RenderState? _render;
@@ -32,24 +33,28 @@
         _render = new RenderState { H = _h, Params = new MapParams { Ncities = 0, Nterrs = 0 } };
     }
 
-    async Task AddCity()
+    async Task Run(Func<Task> action)
     {
+        _error = string.Empty;
         _busy = true;
         StateHasChanged();
+        try { await action(); }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _busy = false; }
+    }
+
+    Task AddCity() => Run(async () =>
+    {
         await EnsureH();
         _render!.Params.Ncities++;
         CityPlacer.PlaceCity(_render);
         _svg = TerrainRenderer.DrawCities(_render);
-        _busy = false;
-    }
+    });
 
-    async Task Reset()
+    Task Reset() => Run(async () =>
     {
-        _busy = true;
-        StateHasChanged();
         await EnsureH();
         _render = new RenderState { H = _h!, Params = new MapParams { Ncities = 0, Nterrs = 0 } };
         _svg = TerrainRenderer.DrawVoronoi(_h!);
-        _busy = false;
-    }
+    });
 }

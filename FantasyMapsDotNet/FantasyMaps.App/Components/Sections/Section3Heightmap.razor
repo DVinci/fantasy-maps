@@ -3,7 +3,7 @@
 <h2>Height map</h2>
 <p>We assign a height value to each Voronoi vertex. Heights are built up from simple primitives: slopes, cones, and randomly placed mountain blobs. We then normalize and combine them to get interesting terrain.</p>
 
-<DemoBox SvgContent="@_svg" IsGenerating="@_busy">
+<DemoBox SvgContent="@_svg" IsGenerating="@_busy" Error="@_error">
     <Controls>
         <button @onclick="AddSlope" disabled="@_busy">Add random slope</button>
         <button @onclick="AddCone" disabled="@_busy">Add cone</button>
@@ -19,6 +19,7 @@
 
 @code {
     string _svg = string.Empty;
+    string _error = string.Empty;
     bool _busy;
     HeightField? _h;
 
@@ -29,83 +30,77 @@
         _h = HeightPrimitives.Zero(mesh);
     }
 
-    async Task Redraw()
+    async Task Run(Func<Task> action)
     {
-        _svg = TerrainRenderer.DrawVoronoi(_h!);
-        _busy = false;
+        _error = string.Empty;
+        _busy = true;
+        StateHasChanged();
+        try { await action(); }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _busy = false; }
     }
 
-    async Task AddSlope()
+    Task AddSlope() => Run(async () =>
     {
-        _busy = true; StateHasChanged();
         await EnsureH();
         double[] dir = [Rand.Normal() * 4, Rand.Normal() * 4];
         _h = HeightPrimitives.Add(_h!, HeightPrimitives.Slope(_h!.Mesh, dir));
-        await Redraw();
-    }
+        _svg = TerrainRenderer.DrawVoronoi(_h);
+    });
 
-    async Task AddCone()
+    Task AddCone() => Run(async () =>
     {
-        _busy = true; StateHasChanged();
         await EnsureH();
         _h = HeightPrimitives.Add(_h!, HeightPrimitives.Cone(_h!.Mesh, -0.5));
-        await Redraw();
-    }
+        _svg = TerrainRenderer.DrawVoronoi(_h);
+    });
 
-    async Task AddInvCone()
+    Task AddInvCone() => Run(async () =>
     {
-        _busy = true; StateHasChanged();
         await EnsureH();
         _h = HeightPrimitives.Add(_h!, HeightPrimitives.Cone(_h!.Mesh, 0.5));
-        await Redraw();
-    }
+        _svg = TerrainRenderer.DrawVoronoi(_h);
+    });
 
-    async Task AddMountains()
+    Task AddMountains() => Run(async () =>
     {
-        _busy = true; StateHasChanged();
         await EnsureH();
         _h = HeightPrimitives.Add(_h!, HeightPrimitives.Mountains(_h!.Mesh, 5));
-        await Redraw();
-    }
+        _svg = TerrainRenderer.DrawVoronoi(_h);
+    });
 
-    async Task Normalize()
+    Task Normalize() => Run(async () =>
     {
-        _busy = true; StateHasChanged();
         await EnsureH();
         _h = HeightPrimitives.Normalize(_h!);
-        await Redraw();
-    }
+        _svg = TerrainRenderer.DrawVoronoi(_h);
+    });
 
-    async Task Peaky()
+    Task Peaky() => Run(async () =>
     {
-        _busy = true; StateHasChanged();
         await EnsureH();
         _h = HeightPrimitives.Peaky(_h!);
-        await Redraw();
-    }
+        _svg = TerrainRenderer.DrawVoronoi(_h);
+    });
 
-    async Task Relax()
+    Task Relax() => Run(async () =>
     {
-        _busy = true; StateHasChanged();
         await EnsureH();
         _h = HeightPrimitives.Relax(_h!);
-        await Redraw();
-    }
+        _svg = TerrainRenderer.DrawVoronoi(_h);
+    });
 
-    async Task SetSeaLevel()
+    Task SetSeaLevel() => Run(async () =>
     {
-        _busy = true; StateHasChanged();
         await EnsureH();
         _h = Erosion.SetSeaLevel(_h!, 0.5);
-        await Redraw();
-    }
+        _svg = TerrainRenderer.DrawVoronoi(_h);
+    });
 
-    async Task Reset()
+    Task Reset() => Run(async () =>
     {
-        _busy = true; StateHasChanged();
         var mesh = await MapState.EnsureMeshAsync(256);
         _h = HeightPrimitives.Zero(mesh);
         _svg = string.Empty;
-        _busy = false;
-    }
+    });
 }

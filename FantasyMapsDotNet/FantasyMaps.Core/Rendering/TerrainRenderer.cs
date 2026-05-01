@@ -10,7 +10,7 @@ public static class TerrainRenderer
     {
         var sb = new StringBuilder();
         foreach (var pt in mesh.Pts)
-            sb.AppendLine(SvgBuilder.Circle(pt[0], pt[1], 1.5, "", "fill:#666;stroke:none"));
+            sb.AppendLine(SvgBuilder.Circle(pt[0], pt[1], 5, "", "fill:#666;stroke:none"));
         return SvgBuilder.WrapSvg(sb.ToString());
     }
 

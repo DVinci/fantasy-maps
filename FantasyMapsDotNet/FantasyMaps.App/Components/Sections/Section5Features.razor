@@ -3,7 +3,7 @@
 <h2>Physical features</h2>
 <p>With the terrain in place, we can extract physical features: coast lines (contour at h=0), rivers (paths of highest water flux), and slope indicators showing terrain steepness.</p>
 
-<DemoBox SvgContent="@_svg" IsGenerating="@_busy">
+<DemoBox SvgContent="@_svg" IsGenerating="@_busy" Error="@_error">
     <Controls>
         <button @onclick="ToggleCoast" disabled="@_busy">@(_showCoast ? "Hide" : "Show") coast</button>
         <button @onclick="ToggleRivers" disabled="@_busy">@(_showRivers ? "Hide" : "Show") rivers</button>
@@ -13,6 +13,7 @@
 
 @code {
     string _svg = string.Empty;
+    string _error = string.Empty;
     bool _busy;
     bool _showCoast = true;
     bool _showRivers = true;
@@ -36,11 +37,16 @@
 
     async Task Render()
     {
+        _error = string.Empty;
         _busy = true;
         StateHasChanged();
-        await EnsureH();
-        _svg = TerrainRenderer.VisualizeFeatured(_h!, _showCoast, _showRivers, _showSlopes);
-        _busy = false;
+        try
+        {
+            await EnsureH();
+            _svg = TerrainRenderer.VisualizeFeatured(_h!, _showCoast, _showRivers, _showSlopes);
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _busy = false; }
     }
 
     async Task ToggleCoast()  { _showCoast  = !_showCoast;  await Render(); }

@@ -1,0 +1,72 @@
+@rendermode InteractiveServer
+@inject MapStateService MapState
+
+<h2>Height map</h2>
+<DemoBox SvgContent="@_svg" IsGenerating="@_busy" Error="@_error" TestId="section3">
+    <Controls>
+        <button data-testid="btn-add-slope" @onclick="AddSlope" disabled="@_busy">Add random slope</button>
+        <button data-testid="btn-add-mountains" @onclick="AddMountains" disabled="@_busy">Add mountains</button>
+        <button data-testid="btn-normalize" @onclick="Normalize" disabled="@_busy">Normalize</button>
+        <button data-testid="btn-set-sea" @onclick="SetSeaLevel" disabled="@_busy">Set sea level</button>
+        <button data-testid="btn-reset-height" @onclick="Reset" disabled="@_busy">Reset</button>
+    </Controls>
+</DemoBox>
+
+@code {
+    string _svg = string.Empty;
+    string _error = string.Empty;
+    bool _busy;
+    HeightField? _h;
+
+    async Task EnsureH()
+    {
+        if (_h != null) return;
+        var mesh = await MapState.EnsureMeshAsync(256);
+        _h = HeightPrimitives.Zero(mesh);
+    }
+
+    async Task Run(Func<Task> action)
+    {
+        _error = string.Empty;
+        _busy = true;
+        StateHasChanged();
+        try { await action(); }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _busy = false; }
+    }
+
+    Task AddSlope() => Run(async () =>
+    {
+        await EnsureH();
+        _h = HeightPrimitives.Add(_h!, HeightPrimitives.Slope(_h!.Mesh, [Rand.Normal() * 4, Rand.Normal() * 4]));
+        _svg = TerrainRenderer.DrawVoronoi(_h);
+    });
+
+    Task AddMountains() => Run(async () =>
+    {
+        await EnsureH();
+        _h = HeightPrimitives.Add(_h!, HeightPrimitives.Mountains(_h!.Mesh, 5));
+        _svg = TerrainRenderer.DrawVoronoi(_h);
+    });
+
+    Task Normalize() => Run(async () =>
+    {
+        await EnsureH();
+        _h = HeightPrimitives.Normalize(_h!);
+        _svg = TerrainRenderer.DrawVoronoi(_h);
+    });
+
+    Task SetSeaLevel() => Run(async () =>
+    {
+        await EnsureH();
+        _h = Erosion.SetSeaLevel(_h!, 0.5);
+        _svg = TerrainRenderer.DrawVoronoi(_h);
+    });
+
+    Task Reset() => Run(async () =>
+    {
+        var mesh = await MapState.EnsureMeshAsync(256);
+        _h = HeightPrimitives.Zero(mesh);
+        _svg = string.Empty;
+    });
+}

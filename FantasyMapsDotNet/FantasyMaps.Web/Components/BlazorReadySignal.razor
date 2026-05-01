@@ -1,0 +1,19 @@
+@rendermode InteractiveServer
+
+@if (_ready)
+{
+    <span id="blazor-connected" style="display:none;"></span>
+}
+
+@code {
+    bool _ready;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _ready = true;
+            StateHasChanged();
+        }
+    }
+}

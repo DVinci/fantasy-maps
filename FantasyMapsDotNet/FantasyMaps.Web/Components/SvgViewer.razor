@@ -1,0 +1,12 @@
+@if (!string.IsNullOrEmpty(Content))
+{
+    @((MarkupString)Content)
+}
+else
+{
+    <svg width="800" viewBox="-500 -500 1000 1000" style="display:block;width:100%;height:auto;background:#fff;"></svg>
+}
+
+@code {
+    [Parameter] public string Content { get; set; } = string.Empty;
+}

@@ -1,0 +1,29 @@
+<div class="demo" data-testid="@TestId">
+    @if (Controls != null)
+    {
+        <div class="controls">
+            @Controls
+        </div>
+    }
+    <div data-testid="@(TestId + "-svg")">
+        <SvgViewer Content="@SvgContent" />
+    </div>
+    @if (!string.IsNullOrEmpty(Error))
+    {
+        <div data-testid="@(TestId + "-error")" style="color:red;padding:8px;border:1px solid red;margin-top:8px;font-family:monospace;font-size:0.85em">
+            Error: @Error
+        </div>
+    }
+    @if (IsGenerating)
+    {
+        <div class="loading-overlay">Generating map...</div>
+    }
+</div>
+
+@code {
+    [Parameter] public RenderFragment? Controls { get; set; }
+    [Parameter] public string SvgContent { get; set; } = string.Empty;
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public bool IsGenerating { get; set; }
+    [Parameter] public string TestId { get; set; } = "demo";
+}

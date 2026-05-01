@@ -3,7 +3,7 @@
 <h2>Territories</h2>
 <p>Each city claims territory using a weighted flood fill — expanding outward with a cost that depends on terrain height and distance from water. Borders follow the edges between cells claimed by different cities.</p>
 
-<DemoBox SvgContent="@_svg" IsGenerating="@_busy">
+<DemoBox SvgContent="@_svg" IsGenerating="@_busy" Error="@_error">
     <Controls>
         <button @onclick="ShowTerritories" disabled="@_busy">Show territories</button>
     </Controls>
@@ -11,6 +11,7 @@
 
 @code {
     string _svg = string.Empty;
+    string _error = string.Empty;
     bool _busy;
     HeightField? _h;
 
@@ -31,17 +32,22 @@
 
     async Task ShowTerritories()
     {
+        _error = string.Empty;
         _busy = true;
         StateHasChanged();
-        await EnsureH();
-        _svg = await Task.Run(() =>
+        try
         {
-            var @params = new MapParams { Npts = 256, Ncities = 5, Nterrs = 3 };
-            var render = new RenderState { H = _h!, Params = @params };
-            CityPlacer.PlaceCities(render);
-            MapRenderer.PrepareRender(render);
-            return MapRenderer.DrawTerritories(render);
-        });
-        _busy = false;
+            await EnsureH();
+            _svg = await Task.Run(() =>
+            {
+                var @params = new MapParams { Npts = 256, Ncities = 5, Nterrs = 3 };
+                var render = new RenderState { H = _h!, Params = @params };
+                CityPlacer.PlaceCities(render);
+                MapRenderer.PrepareRender(render);
+                return MapRenderer.DrawTerritories(render);
+            });
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _busy = false; }
     }
 }

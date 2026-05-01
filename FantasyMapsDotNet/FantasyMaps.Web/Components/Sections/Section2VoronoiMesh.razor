@@ -1,0 +1,29 @@
+@rendermode InteractiveServer
+@inject MapStateService MapState
+
+<h2>Voronoi mesh</h2>
+<DemoBox SvgContent="@_svg" IsGenerating="@_busy" Error="@_error" TestId="section2">
+    <Controls>
+        <button data-testid="btn-show-mesh" @onclick="ShowMesh" disabled="@_busy">Show Voronoi mesh</button>
+    </Controls>
+</DemoBox>
+
+@code {
+    string _svg = string.Empty;
+    string _error = string.Empty;
+    bool _busy;
+
+    async Task ShowMesh()
+    {
+        _error = string.Empty;
+        _busy = true;
+        StateHasChanged();
+        try
+        {
+            var mesh = await MapState.EnsureMeshAsync(256);
+            _svg = TerrainRenderer.VisualizeMesh(mesh);
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _busy = false; }
+    }
+}
