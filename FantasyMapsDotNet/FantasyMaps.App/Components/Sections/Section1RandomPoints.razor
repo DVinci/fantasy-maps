@@ -1,0 +1,37 @@
+@inject MapStateService MapState
+
+<h2>Placing random points</h2>
+<p>The first step is to generate a set of random points and then improve their distribution using Lloyd relaxation (moving each point to the centroid of its Voronoi cell). This gives us a nicely spaced irregular grid to work with.</p>
+
+<DemoBox SvgContent="@_svg" IsGenerating="@_busy" Error="@_error">
+    <Controls>
+        <button @onclick="Generate" disabled="@_busy">Generate random points</button>
+    </Controls>
+</DemoBox>
+
+@code {
+    string _svg = string.Empty;
+    string _error = string.Empty;
+    bool _busy;
+
+    async Task Generate()
+    {
+        _error = string.Empty;
+        _busy = true;
+        StateHasChanged();
+        try
+        {
+            MapState.ResetMesh();
+            var mesh = await MapState.EnsureMeshAsync(256);
+            _svg = TerrainRenderer.VisualizePoints(mesh);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

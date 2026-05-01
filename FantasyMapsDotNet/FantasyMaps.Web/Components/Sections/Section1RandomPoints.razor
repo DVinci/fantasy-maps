@@ -1,0 +1,30 @@
+@rendermode InteractiveServer
+@inject MapStateService MapState
+
+<h2>Placing random points</h2>
+<DemoBox SvgContent="@_svg" IsGenerating="@_busy" Error="@_error" TestId="section1">
+    <Controls>
+        <button data-testid="btn-generate-points" @onclick="Generate" disabled="@_busy">Generate random points</button>
+    </Controls>
+</DemoBox>
+
+@code {
+    string _svg = string.Empty;
+    string _error = string.Empty;
+    bool _busy;
+
+    async Task Generate()
+    {
+        _error = string.Empty;
+        _busy = true;
+        StateHasChanged();
+        try
+        {
+            MapState.ResetMesh();
+            var mesh = await MapState.EnsureMeshAsync(256);
+            _svg = TerrainRenderer.VisualizePoints(mesh);
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _busy = false; }
+    }
+}

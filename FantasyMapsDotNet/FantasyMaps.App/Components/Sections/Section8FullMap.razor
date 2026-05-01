@@ -1,0 +1,77 @@
+@inject SvgExportService Exporter
+
+<h2>Full map</h2>
+<p>The complete pipeline: generate terrain, simulate erosion, place cities and territories, add rivers and coast, then label everything with procedurally generated names. Click to generate a unique fantasy map.</p>
+
+<div class="demo final-map">
+    <div class="controls">
+        <button class="primary" @onclick="GenerateMap" disabled="@_busy">Generate map</button>
+        <button @onclick="DownloadSvg" disabled="@(_busy || string.IsNullOrEmpty(_svg))">Download SVG</button>
+        <label>
+            Quality:
+            <select @bind="_npts" disabled="@_busy">
+                <option value="512">Low (512)</option>
+                <option value="2048">Medium (2048)</option>
+                <option value="4096">High (4096)</option>
+                <option value="16384">Ultra (16384 — JS original)</option>
+            </select>
+        </label>
+        <label>
+            Terrain: Rugged
+            <input type="range" min="0" max="15" step="1" @bind="_relaxPasses" disabled="@_busy" />
+            Smooth (@_relaxPasses)
+        </label>
+    </div>
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <div style="color:red;padding:8px;border:1px solid red;margin-top:8px;font-family:monospace;font-size:0.85em">
+            Error: @_error
+        </div>
+    }
+    @if (_busy)
+    {
+        <div class="loading-overlay">Generating map...</div>
+    }
+    <SvgViewer Content="@_svg" />
+</div>
+
+@code {
+    string _svg = string.Empty;
+    string _error = string.Empty;
+    bool _busy;
+    int _npts = 4096;
+    int _relaxPasses = 5;
+
+    async Task GenerateMap()
+    {
+        _error = string.Empty;
+        _busy = true;
+        StateHasChanged();
+        try
+        {
+            var @params = new MapParams { Npts = _npts, Ncities = 15, Nterrs = 5, RelaxPasses = _relaxPasses };
+            _svg = await Task.Run(() =>
+            {
+                var mesh = MeshBuilder.GenerateGoodMesh(@params.Npts);
+                var render = MapRenderer.GenerateFullMap(@params, mesh);
+                var lang = FantasyMaps.Core.Language.LanguageFactory.MakeRandomLanguage();
+                return MapRenderer.DrawMap(render, lang);
+            });
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    async Task DownloadSvg()
+    {
+        if (string.IsNullOrEmpty(_svg)) return;
+        try { await Exporter.SaveAsync(_svg); }
+        catch (Exception ex) { _error = ex.Message; }
+    }
+}

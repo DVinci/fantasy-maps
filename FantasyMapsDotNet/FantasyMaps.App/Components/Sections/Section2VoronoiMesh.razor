@@ -1,0 +1,36 @@
+@inject MapStateService MapState
+
+<h2>Voronoi mesh</h2>
+<p>Next we compute the Voronoi diagram of those points. Each Voronoi cell is a region closer to one point than any other. The dual of this diagram — the Delaunay triangulation — gives us the adjacency structure we'll use throughout the algorithm.</p>
+
+<DemoBox SvgContent="@_svg" IsGenerating="@_busy" Error="@_error">
+    <Controls>
+        <button @onclick="ShowMesh" disabled="@_busy">Show Voronoi mesh</button>
+    </Controls>
+</DemoBox>
+
+@code {
+    string _svg = string.Empty;
+    string _error = string.Empty;
+    bool _busy;
+
+    async Task ShowMesh()
+    {
+        _error = string.Empty;
+        _busy = true;
+        StateHasChanged();
+        try
+        {
+            var mesh = await MapState.EnsureMeshAsync(256);
+            _svg = TerrainRenderer.VisualizeMesh(mesh);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}
