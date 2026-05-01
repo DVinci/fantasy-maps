@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="FantasyMaps.Core.Tests/FantasyMaps.Core.Tests.csproj" />
+  <Project Path="FantasyMaps.Core/FantasyMaps.Core.csproj" />
+</Solution>
