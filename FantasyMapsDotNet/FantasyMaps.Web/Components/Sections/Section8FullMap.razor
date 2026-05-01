@@ -4,6 +4,20 @@
 <div class="demo final-map" data-testid="section8">
     <div class="controls">
         <button class="primary" data-testid="btn-generate-map" @onclick="GenerateMap" disabled="@_busy">Generate map</button>
+        <label>
+            Quality:
+            <select @bind="_npts" disabled="@_busy">
+                <option value="512">Low (512)</option>
+                <option value="2048">Medium (2048)</option>
+                <option value="4096">High (4096)</option>
+                <option value="16384">Ultra (16384 — JS original)</option>
+            </select>
+        </label>
+        <label>
+            Terrain: Rugged
+            <input type="range" min="0" max="15" step="1" @bind="_relaxPasses" disabled="@_busy" />
+            Smooth (@_relaxPasses)
+        </label>
     </div>
     @if (!string.IsNullOrEmpty(_error))
     {
@@ -24,6 +38,8 @@
     string _svg = string.Empty;
     string _error = string.Empty;
     bool _busy;
+    int _npts = 4096;
+    int _relaxPasses = 5;
 
     async Task GenerateMap()
     {
@@ -32,7 +48,7 @@
         StateHasChanged();
         try
         {
-            var @params = new MapParams { Npts = 512, Ncities = 10, Nterrs = 5 };
+            var @params = new MapParams { Npts = _npts, Ncities = 15, Nterrs = 5, RelaxPasses = _relaxPasses };
             _svg = await Task.Run(() =>
             {
                 var mesh = MeshBuilder.GenerateGoodMesh(@params.Npts);

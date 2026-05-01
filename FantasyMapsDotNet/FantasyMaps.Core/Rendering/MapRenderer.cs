@@ -17,15 +17,15 @@ public static class MapRenderer
     }
 
     /// <summary>
-    /// Full antique-style map: rivers, coast, territory borders, slope hatch,
-    /// cities, and labels — all strokes on a white background (no filled terrain cells).
-    /// Matches the original JS drawMap() exactly.
+    /// Full antique-style map: light ocean wash, rivers, coast, territory borders,
+    /// slope hatch, cities, and labels. Matches the original JS drawMap() style.
     /// </summary>
     public static string DrawMap(RenderState render, LanguageModel? lang = null)
     {
         PrepareRender(render);
         var sb = new StringBuilder();
 
+        RenderOceanFill(render.H, sb);
         sb.Append(TerrainRenderer.DrawPaths(render.Rivers, "river",
             "stroke:#36a;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round"));
         sb.Append(TerrainRenderer.DrawPaths(render.Coasts, "coast",
@@ -56,6 +56,18 @@ public static class MapRenderer
             "stroke:#a33;stroke-width:2.5;fill:none;stroke-dasharray:6,6;stroke-linecap:round;stroke-linejoin:round"));
         sb.Append(TerrainRenderer.VisualizeCities(render));
         return SvgBuilder.WrapSvg(sb.ToString());
+    }
+
+    private static void RenderOceanFill(HeightField h, StringBuilder sb)
+    {
+        for (int i = 0; i < h.Mesh.Vxs.Length; i++)
+        {
+            if (h[i] > 0f) continue;
+            var triPts = h.Mesh.Tris[i];
+            if (triPts == null || triPts.Length < 3) continue;
+            sb.AppendLine(FormattableString.Invariant(
+                $"<path d=\"{SvgBuilder.MakePath(triPts)}\" fill=\"#c8dce8\" />"));
+        }
     }
 
     private static void RenderTerritoryFill(RenderState render, StringBuilder sb)
@@ -96,6 +108,8 @@ public static class MapRenderer
         var h = HeightPrimitives.Mountains(mesh, 5);
         h = HeightPrimitives.Add(h, HeightPrimitives.Slope(mesh,
             [Random.Shared.NextDouble() * 4 - 2, Random.Shared.NextDouble() * 4 - 2]));
+        for (int i = 0; i < @params.RelaxPasses; i++)
+            h = HeightPrimitives.Relax(h);
         h = HeightPrimitives.Peaky(h);
         h = Erosion.DoErosion(h, 0.05f, 5);
         h = Erosion.SetSeaLevel(h, 0.5);

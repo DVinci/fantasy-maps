@@ -102,13 +102,13 @@ public static class TerrainRenderer
                 {
                     double u = Rand.Normal() * r, v = Rand.Normal() * r;
                     sb.AppendLine(SvgBuilder.Line(x + u - l, y + v + l * s, x + u + l, y + v - l * s,
-                        "slope", "stroke:#797;stroke-width:1;stroke-linecap:round"));
+                        "slope", "stroke:#597;stroke-width:1.5;stroke-linecap:round"));
                 }
             }
             else
             {
                 sb.AppendLine(SvgBuilder.Line(x - l, y + l * s, x + l, y - l * s,
-                    "slope", "stroke:#797;stroke-width:1;stroke-linecap:round"));
+                    "slope", "stroke:#597;stroke-width:1.5;stroke-linecap:round"));
             }
         }
         return sb.ToString();
