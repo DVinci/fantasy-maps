@@ -63,3 +63,21 @@ public class MeshBuilderTests
         });
     }
 }
+// Smoke test lives here because it exercises the full pipeline top-to-bottom
+
+public class FullPipelineTests
+{
+    [Fact]
+    public void FullPipeline_GeneratesValidSvg()
+    {
+        var @params = new Core.MapParams { Npts = 512, Ncities = 5, Nterrs = 3 };
+        var mesh = MeshBuilder.GenerateGoodMesh(@params.Npts);
+        var render = Core.Rendering.MapRenderer.GenerateFullMap(@params, mesh);
+        var lang = Core.Language.LanguageFactory.MakeRandomLanguage();
+        string svg = Core.Rendering.MapRenderer.DrawMap(render, lang);
+        Assert.Contains("<svg", svg);
+        Assert.Contains("<path", svg);
+        Assert.Contains("<text", svg);
+        Assert.True(svg.Length > 1000, "SVG should have substantial content");
+    }
+}
