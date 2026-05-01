@@ -1,0 +1,55 @@
+@inject MapStateService MapState
+
+<h2>City placement</h2>
+<p>Cities are placed on land vertices with high water flux (rivers make good city sites) and at least a minimum distance apart. We score every land vertex and greedily pick the best.</p>
+
+<DemoBox SvgContent="@_svg" IsGenerating="@_busy">
+    <Controls>
+        <button @onclick="AddCity" disabled="@_busy">Add city</button>
+        <button @onclick="Reset" disabled="@_busy">Reset cities</button>
+    </Controls>
+</DemoBox>
+
+@code {
+    string _svg = string.Empty;
+    bool _busy;
+    HeightField? _h;
+    RenderState? _render;
+
+    async Task EnsureH()
+    {
+        if (_h != null) return;
+        var mesh = await MapState.EnsureMeshAsync(256);
+        var h = HeightPrimitives.Add(
+            HeightPrimitives.Slope(mesh, [Rand.Normal() * 4, Rand.Normal() * 4]),
+            HeightPrimitives.Cone(mesh, -0.5),
+            HeightPrimitives.Mountains(mesh, 5));
+        h = HeightPrimitives.Normalize(h);
+        h = HeightPrimitives.Peaky(h);
+        h = Erosion.SetSeaLevel(h, 0.5);
+        _h = await Task.Run(() => Erosion.DoErosion(h, 0.1f));
+        _h = Erosion.CleanCoast(_h, 1);
+        _render = new RenderState { H = _h, Params = new MapParams { Ncities = 0, Nterrs = 0 } };
+    }
+
+    async Task AddCity()
+    {
+        _busy = true;
+        StateHasChanged();
+        await EnsureH();
+        _render!.Params.Ncities++;
+        CityPlacer.PlaceCity(_render);
+        _svg = TerrainRenderer.DrawCities(_render);
+        _busy = false;
+    }
+
+    async Task Reset()
+    {
+        _busy = true;
+        StateHasChanged();
+        await EnsureH();
+        _render = new RenderState { H = _h!, Params = new MapParams { Ncities = 0, Nterrs = 0 } };
+        _svg = TerrainRenderer.DrawVoronoi(_h!);
+        _busy = false;
+    }
+}

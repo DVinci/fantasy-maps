@@ -1,0 +1,63 @@
+@inject MapStateService MapState
+
+<h2>Erosion</h2>
+<p>We simulate hydraulic erosion to carve realistic river valleys and smooth out artificial-looking height discontinuities. The process: fill sinks → compute flux → erode → repeat.</p>
+
+<DemoBox SvgContent="@_svg" IsGenerating="@_busy">
+    <Controls>
+        <button @onclick="GenCoast" disabled="@_busy">Generate coast</button>
+        <button @onclick="DoErode" disabled="@_busy">Erode</button>
+        <button @onclick="DoCleanCoast" disabled="@_busy">Clean coast</button>
+    </Controls>
+</DemoBox>
+
+@code {
+    string _svg = string.Empty;
+    bool _busy;
+    HeightField? _h;
+
+    public HeightField? HeightResult => _h;
+
+    async Task EnsureH()
+    {
+        if (_h != null) return;
+        var mesh = await MapState.EnsureMeshAsync(256);
+        var h = HeightPrimitives.Add(
+            HeightPrimitives.Slope(mesh, [Rand.Normal() * 4, Rand.Normal() * 4]),
+            HeightPrimitives.Cone(mesh, -0.5),
+            HeightPrimitives.Mountains(mesh, 5));
+        h = HeightPrimitives.Normalize(h);
+        h = HeightPrimitives.Peaky(h);
+        _h = Erosion.SetSeaLevel(h, 0.5);
+    }
+
+    async Task GenCoast()
+    {
+        _busy = true;
+        StateHasChanged();
+        _h = null;
+        await EnsureH();
+        _svg = TerrainRenderer.DrawVoronoi(_h!);
+        _busy = false;
+    }
+
+    async Task DoErode()
+    {
+        _busy = true;
+        StateHasChanged();
+        await EnsureH();
+        _h = await Task.Run(() => Erosion.DoErosion(_h!, 0.1f));
+        _svg = TerrainRenderer.DrawVoronoi(_h);
+        _busy = false;
+    }
+
+    async Task DoCleanCoast()
+    {
+        _busy = true;
+        StateHasChanged();
+        await EnsureH();
+        _h = Erosion.CleanCoast(_h!, 1);
+        _svg = TerrainRenderer.DrawVoronoi(_h);
+        _busy = false;
+    }
+}

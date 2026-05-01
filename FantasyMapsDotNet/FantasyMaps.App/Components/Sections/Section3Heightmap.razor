@@ -1,0 +1,111 @@
+@inject MapStateService MapState
+
+<h2>Height map</h2>
+<p>We assign a height value to each Voronoi vertex. Heights are built up from simple primitives: slopes, cones, and randomly placed mountain blobs. We then normalize and combine them to get interesting terrain.</p>
+
+<DemoBox SvgContent="@_svg" IsGenerating="@_busy">
+    <Controls>
+        <button @onclick="AddSlope" disabled="@_busy">Add random slope</button>
+        <button @onclick="AddCone" disabled="@_busy">Add cone</button>
+        <button @onclick="AddInvCone" disabled="@_busy">Add inverted cone</button>
+        <button @onclick="AddMountains" disabled="@_busy">Add mountains</button>
+        <button @onclick="Normalize" disabled="@_busy">Normalize</button>
+        <button @onclick="Peaky" disabled="@_busy">Peaky</button>
+        <button @onclick="Relax" disabled="@_busy">Relax</button>
+        <button @onclick="SetSeaLevel" disabled="@_busy">Set sea level</button>
+        <button @onclick="Reset" disabled="@_busy">Reset</button>
+    </Controls>
+</DemoBox>
+
+@code {
+    string _svg = string.Empty;
+    bool _busy;
+    HeightField? _h;
+
+    async Task EnsureH()
+    {
+        if (_h != null) return;
+        var mesh = await MapState.EnsureMeshAsync(256);
+        _h = HeightPrimitives.Zero(mesh);
+    }
+
+    async Task Redraw()
+    {
+        _svg = TerrainRenderer.DrawVoronoi(_h!);
+        _busy = false;
+    }
+
+    async Task AddSlope()
+    {
+        _busy = true; StateHasChanged();
+        await EnsureH();
+        double[] dir = [Rand.Normal() * 4, Rand.Normal() * 4];
+        _h = HeightPrimitives.Add(_h!, HeightPrimitives.Slope(_h!.Mesh, dir));
+        await Redraw();
+    }
+
+    async Task AddCone()
+    {
+        _busy = true; StateHasChanged();
+        await EnsureH();
+        _h = HeightPrimitives.Add(_h!, HeightPrimitives.Cone(_h!.Mesh, -0.5));
+        await Redraw();
+    }
+
+    async Task AddInvCone()
+    {
+        _busy = true; StateHasChanged();
+        await EnsureH();
+        _h = HeightPrimitives.Add(_h!, HeightPrimitives.Cone(_h!.Mesh, 0.5));
+        await Redraw();
+    }
+
+    async Task AddMountains()
+    {
+        _busy = true; StateHasChanged();
+        await EnsureH();
+        _h = HeightPrimitives.Add(_h!, HeightPrimitives.Mountains(_h!.Mesh, 5));
+        await Redraw();
+    }
+
+    async Task Normalize()
+    {
+        _busy = true; StateHasChanged();
+        await EnsureH();
+        _h = HeightPrimitives.Normalize(_h!);
+        await Redraw();
+    }
+
+    async Task Peaky()
+    {
+        _busy = true; StateHasChanged();
+        await EnsureH();
+        _h = HeightPrimitives.Peaky(_h!);
+        await Redraw();
+    }
+
+    async Task Relax()
+    {
+        _busy = true; StateHasChanged();
+        await EnsureH();
+        _h = HeightPrimitives.Relax(_h!);
+        await Redraw();
+    }
+
+    async Task SetSeaLevel()
+    {
+        _busy = true; StateHasChanged();
+        await EnsureH();
+        _h = Erosion.SetSeaLevel(_h!, 0.5);
+        await Redraw();
+    }
+
+    async Task Reset()
+    {
+        _busy = true; StateHasChanged();
+        var mesh = await MapState.EnsureMeshAsync(256);
+        _h = HeightPrimitives.Zero(mesh);
+        _svg = string.Empty;
+        _busy = false;
+    }
+}

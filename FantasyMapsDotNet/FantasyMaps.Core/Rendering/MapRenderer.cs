@@ -37,6 +37,17 @@ public static class MapRenderer
         return SvgBuilder.WrapSvg(sb.ToString());
     }
 
+    public static string DrawTerritories(RenderState render)
+    {
+        var sb = new StringBuilder();
+        sb.Append(TerrainRenderer.VisualizeVoronoi(render.H));
+        RenderTerritories(render, sb);
+        sb.Append(TerrainRenderer.DrawPaths(render.Borders, "border",
+            "stroke:#a33;stroke-width:2.5;stroke-dasharray:6,6;stroke-linecap:round;stroke-linejoin:round"));
+        sb.Append(TerrainRenderer.VisualizeCities(render));
+        return SvgBuilder.WrapSvg(sb.ToString());
+    }
+
     private static void RenderTerritories(RenderState render, StringBuilder sb)
     {
         if (render.Terr.Length == 0) return;

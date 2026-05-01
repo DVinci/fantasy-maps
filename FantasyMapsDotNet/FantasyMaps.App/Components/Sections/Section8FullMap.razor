@@ -1,0 +1,43 @@
+@inject SvgExportService Exporter
+
+<h2>Full map</h2>
+<p>The complete pipeline: generate terrain, simulate erosion, place cities and territories, add rivers and coast, then label everything with procedurally generated names. Click to generate a unique fantasy map.</p>
+
+<div class="demo final-map">
+    <div class="controls">
+        <button class="primary" @onclick="GenerateMap" disabled="@_busy">Generate map</button>
+        <button @onclick="DownloadSvg" disabled="@(_busy || string.IsNullOrEmpty(_svg))">Download SVG</button>
+    </div>
+    @if (_busy)
+    {
+        <div class="loading-overlay">Generating map...</div>
+    }
+    <SvgViewer Content="@_svg" />
+</div>
+
+@code {
+    string _svg = string.Empty;
+    bool _busy;
+
+    async Task GenerateMap()
+    {
+        _busy = true;
+        StateHasChanged();
+        var @params = new MapParams { Npts = 512, Ncities = 10, Nterrs = 5 };
+        var result = await Task.Run(() =>
+        {
+            var mesh = MeshBuilder.GenerateGoodMesh(@params.Npts);
+            var render = MapRenderer.GenerateFullMap(@params, mesh);
+            var lang = FantasyMaps.Core.Language.LanguageFactory.MakeRandomLanguage();
+            return MapRenderer.DrawMap(render, lang);
+        });
+        _svg = result;
+        _busy = false;
+    }
+
+    async Task DownloadSvg()
+    {
+        if (string.IsNullOrEmpty(_svg)) return;
+        await Exporter.SaveAsync(_svg);
+    }
+}

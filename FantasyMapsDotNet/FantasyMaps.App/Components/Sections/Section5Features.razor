@@ -1,0 +1,49 @@
+@inject MapStateService MapState
+
+<h2>Physical features</h2>
+<p>With the terrain in place, we can extract physical features: coast lines (contour at h=0), rivers (paths of highest water flux), and slope indicators showing terrain steepness.</p>
+
+<DemoBox SvgContent="@_svg" IsGenerating="@_busy">
+    <Controls>
+        <button @onclick="ToggleCoast" disabled="@_busy">@(_showCoast ? "Hide" : "Show") coast</button>
+        <button @onclick="ToggleRivers" disabled="@_busy">@(_showRivers ? "Hide" : "Show") rivers</button>
+        <button @onclick="ToggleSlopes" disabled="@_busy">@(_showSlopes ? "Hide" : "Show") slopes</button>
+    </Controls>
+</DemoBox>
+
+@code {
+    string _svg = string.Empty;
+    bool _busy;
+    bool _showCoast = true;
+    bool _showRivers = true;
+    bool _showSlopes = true;
+    HeightField? _h;
+
+    async Task EnsureH()
+    {
+        if (_h != null) return;
+        var mesh = await MapState.EnsureMeshAsync(256);
+        var h = HeightPrimitives.Add(
+            HeightPrimitives.Slope(mesh, [Rand.Normal() * 4, Rand.Normal() * 4]),
+            HeightPrimitives.Cone(mesh, -0.5),
+            HeightPrimitives.Mountains(mesh, 5));
+        h = HeightPrimitives.Normalize(h);
+        h = HeightPrimitives.Peaky(h);
+        h = Erosion.SetSeaLevel(h, 0.5);
+        _h = await Task.Run(() => Erosion.DoErosion(h, 0.1f));
+        _h = Erosion.CleanCoast(_h, 1);
+    }
+
+    async Task Render()
+    {
+        _busy = true;
+        StateHasChanged();
+        await EnsureH();
+        _svg = TerrainRenderer.VisualizeFeatured(_h!, _showCoast, _showRivers, _showSlopes);
+        _busy = false;
+    }
+
+    async Task ToggleCoast()  { _showCoast  = !_showCoast;  await Render(); }
+    async Task ToggleRivers() { _showRivers = !_showRivers; await Render(); }
+    async Task ToggleSlopes() { _showSlopes = !_showSlopes; await Render(); }
+}

@@ -1,0 +1,19 @@
+<div class="demo">
+    @if (Controls != null)
+    {
+        <div class="controls">
+            @Controls
+        </div>
+    }
+    <SvgViewer Content="@SvgContent" />
+    @if (IsGenerating)
+    {
+        <div class="loading-overlay">Generating map...</div>
+    }
+</div>
+
+@code {
+    [Parameter] public RenderFragment? Controls { get; set; }
+    [Parameter] public string SvgContent { get; set; } = string.Empty;
+    [Parameter] public bool IsGenerating { get; set; }
+}

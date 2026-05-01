@@ -1,0 +1,47 @@
+@inject MapStateService MapState
+
+<h2>Territories</h2>
+<p>Each city claims territory using a weighted flood fill — expanding outward with a cost that depends on terrain height and distance from water. Borders follow the edges between cells claimed by different cities.</p>
+
+<DemoBox SvgContent="@_svg" IsGenerating="@_busy">
+    <Controls>
+        <button @onclick="ShowTerritories" disabled="@_busy">Show territories</button>
+    </Controls>
+</DemoBox>
+
+@code {
+    string _svg = string.Empty;
+    bool _busy;
+    HeightField? _h;
+
+    async Task EnsureH()
+    {
+        if (_h != null) return;
+        var mesh = await MapState.EnsureMeshAsync(256);
+        var h = HeightPrimitives.Add(
+            HeightPrimitives.Slope(mesh, [Rand.Normal() * 4, Rand.Normal() * 4]),
+            HeightPrimitives.Cone(mesh, -0.5),
+            HeightPrimitives.Mountains(mesh, 5));
+        h = HeightPrimitives.Normalize(h);
+        h = HeightPrimitives.Peaky(h);
+        h = Erosion.SetSeaLevel(h, 0.5);
+        _h = await Task.Run(() => Erosion.DoErosion(h, 0.1f));
+        _h = Erosion.CleanCoast(_h, 1);
+    }
+
+    async Task ShowTerritories()
+    {
+        _busy = true;
+        StateHasChanged();
+        await EnsureH();
+        _svg = await Task.Run(() =>
+        {
+            var @params = new MapParams { Npts = 256, Ncities = 5, Nterrs = 3 };
+            var render = new RenderState { H = _h!, Params = @params };
+            CityPlacer.PlaceCities(render);
+            MapRenderer.PrepareRender(render);
+            return MapRenderer.DrawTerritories(render);
+        });
+        _busy = false;
+    }
+}

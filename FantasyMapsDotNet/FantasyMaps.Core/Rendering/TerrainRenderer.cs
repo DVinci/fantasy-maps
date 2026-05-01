@@ -1,10 +1,49 @@
 using System.Text;
+using FantasyMaps.Core.Mesh;
 using FantasyMaps.Core.Terrain;
 
 namespace FantasyMaps.Core.Rendering;
 
 public static class TerrainRenderer
 {
+    public static string VisualizePoints(VoronoiMesh mesh)
+    {
+        var sb = new StringBuilder();
+        foreach (var pt in mesh.Pts)
+            sb.AppendLine(SvgBuilder.Circle(pt[0], pt[1], 1.5, "", "fill:#666;stroke:none"));
+        return SvgBuilder.WrapSvg(sb.ToString());
+    }
+
+    public static string VisualizeMesh(VoronoiMesh mesh)
+    {
+        var sb = new StringBuilder();
+        foreach (var (v0, v1, _, _) in mesh.Edges)
+        {
+            var a = mesh.Vxs[v0];
+            var b = mesh.Vxs[v1];
+            sb.AppendLine(SvgBuilder.Line(a[0], a[1], b[0], b[1], "",
+                "stroke:#aaa;stroke-width:0.5;stroke-linecap:round"));
+        }
+        foreach (var pt in mesh.Pts)
+            sb.AppendLine(SvgBuilder.Circle(pt[0], pt[1], 1.5, "", "fill:#c33;stroke:none"));
+        return SvgBuilder.WrapSvg(sb.ToString());
+    }
+
+    public static string VisualizeFeatured(HeightField h, bool showCoast, bool showRivers, bool showSlopes)
+    {
+        var sb = new StringBuilder();
+        sb.Append(VisualizeVoronoi(h));
+        if (showCoast)
+            sb.Append(DrawPaths(Rivers.Contour(h, 0f), "coast",
+                "stroke:#333;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round"));
+        if (showRivers)
+            sb.Append(DrawPaths(Rivers.GetRivers(h, 0.01f), "river",
+                "stroke:#36a;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round"));
+        if (showSlopes)
+            sb.Append(VisualizeSlopes(h));
+        return SvgBuilder.WrapSvg(sb.ToString());
+    }
+
     public static string VisualizeVoronoi(HeightField field, float? lo = null, float? hi = null)
     {
         float loVal = lo ?? field.Values.Min() - 1e-9f;
@@ -89,4 +128,11 @@ public static class TerrainRenderer
         }
         return sb.ToString();
     }
+
+    // Wrapped versions — return a full <svg> suitable for direct injection via MarkupString.
+    public static string DrawVoronoi(HeightField h) =>
+        SvgBuilder.WrapSvg(VisualizeVoronoi(h));
+
+    public static string DrawCities(RenderState render) =>
+        SvgBuilder.WrapSvg(VisualizeVoronoi(render.H) + VisualizeCities(render));
 }
