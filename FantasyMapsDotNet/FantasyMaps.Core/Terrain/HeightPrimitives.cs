@@ -56,10 +56,7 @@ public static class HeightPrimitives
     }
 
     public static HeightField Peaky(HeightField h)
-    {
-        var norm = Normalize(h);
-        return Map(norm, v => (float)Math.Sqrt(v));
-    }
+        => Map(h, v => Math.Abs(v));
 
     public static HeightField Add(params HeightField[] fields)
     {

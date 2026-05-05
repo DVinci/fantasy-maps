@@ -2,6 +2,31 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Fantasy Maps .NET (MAUI App)",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "${workspaceFolder}/FantasyMapsDotNet/FantasyMaps.App/bin/Debug/net9.0-windows10.0.19041.0/win10-x64/FantasyMaps.App.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}/FantasyMapsDotNet/FantasyMaps.App",
+      "preLaunchTask": "stop-build-maui-app",
+      "console": "internalConsole"
+    },
+    {
+      "name": "Fantasy Maps .NET (Web Harness)",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "${workspaceFolder}/FantasyMapsDotNet/FantasyMaps.Web/bin/Debug/net9.0/FantasyMaps.Web.dll",
+      "args": ["--urls", "http://localhost:5100"],
+      "cwd": "${workspaceFolder}/FantasyMapsDotNet/FantasyMaps.Web",
+      "preLaunchTask": "build-web-harness",
+      "env": { "ASPNETCORE_ENVIRONMENT": "Development" },
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "Now listening on: (https?://\\S+)",
+        "uriFormat": "%s"
+      }
+    },
+    {
       "name": "Fantasy Maps (VS Code Browser)",
       "type": "node",
       "request": "launch",

@@ -25,7 +25,23 @@ public static class MapRenderer
         PrepareRender(render);
         var sb = new StringBuilder();
 
+        // SVG defs: ocean wave pattern + vignette gradient
+        sb.Append(BuildAntiqueDefs());
+
+        // Parchment background — land cells are not explicitly filled so they show through as parchment
+        sb.Append("<rect x=\"-500\" y=\"-500\" width=\"1000\" height=\"1000\" fill=\"#f4e4c1\"/>");
+
+        // Ocean: flat base color, then wave texture overlay
         RenderOceanFill(render.H, sb);
+        RenderOceanWaves(render.H, sb);
+
+        // Coast inner shadow: drawn before the coast line for a land-depth effect
+        foreach (var path in render.Coasts)
+        {
+            string d = SvgBuilder.MakePath(path);
+            sb.AppendLine($"<path d=\"{d}\" fill=\"none\" style=\"stroke:#553311;stroke-width:9;stroke-linecap:round;stroke-linejoin:round;opacity:0.15\"/>");
+        }
+
         sb.Append(TerrainRenderer.DrawPaths(render.Rivers, "river",
             "stroke:#36a;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round"));
         sb.Append(TerrainRenderer.DrawPaths(render.Coasts, "coast",
@@ -38,8 +54,23 @@ public static class MapRenderer
         if (lang != null)
             sb.Append(LabelPlacer.DrawLabels(render, lang));
 
+        // Vignette overlay — last, so it darkens everything including labels
+        sb.Append("<rect x=\"-500\" y=\"-500\" width=\"1000\" height=\"1000\" fill=\"url(#vignette)\"/>");
+
         return SvgBuilder.WrapSvg(sb.ToString());
     }
+
+    private static string BuildAntiqueDefs() => """
+        <defs>
+          <pattern id="oceanWave" x="0" y="0" width="80" height="20" patternUnits="userSpaceOnUse">
+            <path d="M0,10 Q20,3 40,10 Q60,17 80,10" fill="none" stroke="#7a9fb5" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>
+          </pattern>
+          <radialGradient id="vignette" cx="50%" cy="50%" r="70%">
+            <stop offset="25%" stop-color="black" stop-opacity="0"/>
+            <stop offset="100%" stop-color="black" stop-opacity="0.38"/>
+          </radialGradient>
+        </defs>
+        """;
 
     /// <summary>
     /// Territory view: ocean in light blue, land cells colored by territory at
@@ -67,6 +98,18 @@ public static class MapRenderer
             if (triPts == null || triPts.Length < 3) continue;
             sb.AppendLine(FormattableString.Invariant(
                 $"<path d=\"{SvgBuilder.MakePath(triPts)}\" fill=\"#c8dce8\" />"));
+        }
+    }
+
+    private static void RenderOceanWaves(HeightField h, StringBuilder sb)
+    {
+        for (int i = 0; i < h.Mesh.Vxs.Length; i++)
+        {
+            if (h[i] > 0f) continue;
+            var triPts = h.Mesh.Tris[i];
+            if (triPts == null || triPts.Length < 3) continue;
+            sb.AppendLine(FormattableString.Invariant(
+                $"<path d=\"{SvgBuilder.MakePath(triPts)}\" fill=\"url(#oceanWave)\" />"));
         }
     }
 

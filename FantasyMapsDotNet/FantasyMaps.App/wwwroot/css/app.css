@@ -142,8 +142,6 @@ svg path.border {
 }
 
 svg line.slope {
-    stroke: #797;
-    stroke-width: 1;
     stroke-linecap: round;
 }
 
